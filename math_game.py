@@ -34,7 +34,8 @@ tile_images = {
     'empty': pygame.transform.scale(load_image('grass.png'), (100, 100)),
     'ivent': pygame.transform.scale(load_image('ivent.png'), (50, 100)),
     'hint': pygame.transform.scale(load_image('hint.png'), (50, 100)),
-    'door': pygame.transform.scale(load_image('close_door.png'), (75, 100))}  #Названия некоторых спрайтов
+    'door': pygame.transform.scale(load_image('close_door.png'), (75, 100)),
+    'end': pygame.transform.scale(load_image('close_door_end.png'), (75, 100))}  #Названия некоторых спрайтов
 
 player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  #Спрайт персонажа по умолчанию
 
@@ -97,7 +98,7 @@ class Tile(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.pos = pos_x, pos_y
-
+# Трава
 class Gras(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(sprite_group)
@@ -118,6 +119,7 @@ class Wall(Sprite):
             tile_width * pos_x, tile_height * pos_y)
         self.pos = pos_x, pos_y
 
+# Класс ивентов (примеров)
 class Ivent(Sprite):
     def __init__(self, tile_type, pos_x, pos_y, pos_door=None, question=None, answer=None):
         super().__init__(ivent_group)
@@ -130,6 +132,20 @@ class Ivent(Sprite):
         self.question = question
         self.answer = answer
 
+    def update(self):
+        if pygame.sprite.spritecollideany(self, hero_group):
+            pressed_key = pygame.key.get_pressed()
+            font = pygame.font.Font(None, 50)
+            text = font.render("Нажмите 'E'", True, (255, 255, 255))
+            text_x = screen.get_size()[0] // 2 - text.get_width() // 2
+            text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
+            text_w = text.get_width()
+            text_h = text.get_height()
+            screen.blit(text, (text_x, text_y))
+            if pressed_key[pygame.K_e]:
+                pass                    # Вот тут должно появлятся окно с примерами
+
+# Класс дверей на уровне
 class Door_ivent(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(door_group)
@@ -143,6 +159,34 @@ class Door_ivent(Sprite):
     def update(self):
         if self.open:
             self.image = pygame.transform.scale(load_image('open_door.png'), (75, 100))
+
+# Класс дверей с уровня (переход на новый)
+class Door_end(Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(door_group)
+        self.image = tile_images[tile_type]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x + 15, tile_height * pos_y)
+        self.open = True
+        self.pos = pos_x, pos_y
+
+    def update(self):
+        if pygame.sprite.spritecollideany(self, hero_group):
+            self.image = pygame.transform.scale(load_image('open_door_end.png'), (75, 100))
+            pressed_key = pygame.key.get_pressed()
+            font = pygame.font.Font(None, 50)
+            text = font.render("Нажмите 'E'", True, (255, 255, 255))
+            text_x = screen.get_size()[0] // 2 - text.get_width() // 2
+            text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
+            text_w = text.get_width()
+            text_h = text.get_height()
+            screen.blit(text, (text_x, text_y))
+            if pressed_key[pygame.K_e]:
+                new_level()
+        else:
+            self.image = pygame.transform.scale(load_image('close_door_end.png'), (75, 100))
+
 
 # класс персонажа
 class Player(Sprite):
@@ -182,15 +226,28 @@ class Camera:
 player = None
 running = True
 clock = pygame.time.Clock()
+door_and_ivent = {}
 
-sprite_group = SpriteGroup()  # группа спрайтов травы
-wall_group = SpriteGroup()  # группа спрайтов стен
-hero_group = SpriteGroup()  # группа спрайта игрока
+# Группы спрайтов
+sprite_group = SpriteGroup()
+wall_group = SpriteGroup()
+hero_group = SpriteGroup()
 ivent_group = SpriteGroup()
 door_group = SpriteGroup()
-all_sprites = SpriteGroup()  # группа всех спрайтов
+all_sprites = SpriteGroup()
+list_group = [sprite_group, wall_group, hero_group, ivent_group, door_group, all_sprites]
 
-door_and_ivent = {}
+# Загрузка нового уровня
+def new_level():
+    global level_map, hero, max_x, max_y, camera
+    for i in range(len(list_group)):
+        for el in list_group[i]:
+            el.kill()
+    level_map = load_level('level_1.map')
+    hero, max_x, max_y = generate_level(level_map)
+    camera = Camera()
+    for i in range(len(list_group) - 1):
+        list_group[-1].add(list_group[i])
 
 
 # "аварийное завершение" программы в виде отдельной функции
@@ -227,6 +284,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+# Генерация математических выражений
 def questionsGeneration():
     question = ''
     arithmetics = {
@@ -290,6 +348,8 @@ def generate_level(level):
                 Ivent('hint', x, y)
             elif level[y][x] == '|':
                 Door_ivent('door', x, y)
+            elif level[y][x] == '^':
+                Door_end('end', x, y)
     return new_player, x, y
 
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
@@ -378,6 +438,8 @@ while running:
     wall_group.draw(screen)
     ivent_group.draw(screen)
     door_group.draw(screen)
+    door_group.update()
+    all_sprites.update()
     hero_group.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
