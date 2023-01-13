@@ -96,7 +96,7 @@ class Tile(Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
-
+        self.pos = pos_x, pos_y
 
 class Gras(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
@@ -105,6 +105,7 @@ class Gras(Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
+        self.pos = pos_x, pos_y
 
 
 # установка неподвижных объектов, через которые нельзя ходить (стены)
@@ -115,14 +116,19 @@ class Wall(Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
+        self.pos = pos_x, pos_y
 
 class Ivent(Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
+    def __init__(self, tile_type, pos_x, pos_y, pos_door=None, question=None, answer=None):
         super().__init__(ivent_group)
         self.image = tile_images[tile_type]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 20, tile_height * pos_y)
+        self.pos = pos_x, pos_y
+        self.pos_door = pos_door
+        self.question = question
+        self.answer = answer
 
 class Door_ivent(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
@@ -132,6 +138,7 @@ class Door_ivent(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 15, tile_height * pos_y)
         self.open = False
+        self.pos = pos_x, pos_y
 
     def update(self):
         if self.open:
@@ -221,7 +228,7 @@ def start_screen():
         clock.tick(FPS)
 
 def questionsGeneration():
-    global question
+    question = ''
     arithmetics = {
         " + ": lambda x, y: x + y,
         " - ": lambda x, y: x - y,
@@ -266,11 +273,23 @@ def generate_level(level):
                 new_player = Player(x, y)
                 level[y][x] = "."
             elif level[y][x] == '!':
-                Ivent('ivent', x, y)
+                question, answer = questionsGeneration()
+                if level[y - 1][x] == '|':
+                    pos_door = (y - 1, x)
+                    Ivent('ivent', x, y, pos_door, question, answer)
+                elif level[y + 1][x] == '|':
+                    pos_door = (y + 1, x)
+                    Ivent('ivent', x, y, pos_door, question, answer)
+                elif level[y][x - 1] == '|':
+                    pos_door = (y, x - 1)
+                    Ivent('ivent', x, y, pos_door, question, answer)
+                elif level[y][x + 1] == '|':
+                    pos_door = (y, x + 1)
+                    Ivent('ivent', x, y, pos_door, question, answer)
             elif level[y][x] == '?':
                 Ivent('hint', x, y)
             elif level[y][x] == '|':
-                door_list.append(Door_ivent('door', x, y))
+                Door_ivent('door', x, y)
     return new_player, x, y
 
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
