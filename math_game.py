@@ -30,10 +30,11 @@ height = screen.get_size()[1]
 FPS = 50
 
 tile_images = {
-    'wall': pygame.transform.scale(load_image('box.png'), (100, 100)),
+    'wall': pygame.transform.scale(load_image('tree.png'), (100, 100)),
     'empty': pygame.transform.scale(load_image('grass.png'), (100, 100)),
     'ivent': pygame.transform.scale(load_image('ivent.png'), (50, 100)),
-    'hint': pygame.transform.scale(load_image('hint.png'), (50, 100))}  #Названия некоторых спрайтов
+    'hint': pygame.transform.scale(load_image('hint.png'), (50, 100)),
+    'door': pygame.transform.scale(load_image('close_door.png'), (75, 100))}  #Названия некоторых спрайтов
 
 player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  #Спрайт персонажа по умолчанию
 
@@ -123,6 +124,19 @@ class Ivent(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 20, tile_height * pos_y)
 
+class Door_ivent(Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(door_group)
+        self.image = tile_images[tile_type]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x + 15, tile_height * pos_y)
+        self.open = False
+
+    def update(self):
+        if self.open:
+            self.image = pygame.transform.scale(load_image('open_door.png'), (75, 100))
+
 # класс персонажа
 class Player(Sprite):
     def __init__(self, pos_x, pos_y):
@@ -135,6 +149,10 @@ class Player(Sprite):
         self.rect = self.rect.move(x, y)
         if pygame.sprite.spritecollideany(self, wall_group):
             self.rect = self.rect.move(-x, -y)
+        if pygame.sprite.spritecollideany(self, door_group):
+            for i in door_group:
+                if pygame.sprite.collide_mask(self, i) and not i.open:
+                    self.rect = self.rect.move(-x, -y)
 
 # Клас камеры
 class Camera:
@@ -162,7 +180,10 @@ sprite_group = SpriteGroup()  # группа спрайтов травы
 wall_group = SpriteGroup()  # группа спрайтов стен
 hero_group = SpriteGroup()  # группа спрайта игрока
 ivent_group = SpriteGroup()
+door_group = SpriteGroup()
 all_sprites = SpriteGroup()  # группа всех спрайтов
+
+door_and_ivent = {}
 
 
 # "аварийное завершение" программы в виде отдельной функции
@@ -248,6 +269,8 @@ def generate_level(level):
                 Ivent('ivent', x, y)
             elif level[y][x] == '?':
                 Ivent('hint', x, y)
+            elif level[y][x] == '|':
+                door_list.append(Door_ivent('door', x, y))
     return new_player, x, y
 
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
@@ -294,6 +317,7 @@ all_sprites.add(hero_group)
 all_sprites.add(sprite_group)
 all_sprites.add(wall_group)
 all_sprites.add(ivent_group)
+all_sprites.add(door_group)
 
 up, down, left, right = False, False, False, False  # флаги перемещения
 while running:
@@ -333,8 +357,9 @@ while running:
     screen.fill(pygame.Color("black"))
     sprite_group.draw(screen)
     wall_group.draw(screen)
-    hero_group.draw(screen)
     ivent_group.draw(screen)
+    door_group.draw(screen)
+    hero_group.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
 pygame.quit()
