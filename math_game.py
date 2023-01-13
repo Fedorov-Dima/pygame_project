@@ -1,6 +1,7 @@
 import pygame
 import os
 import sys
+import random
 
 #Карта
 map_file = 'education_level.map'
@@ -187,6 +188,23 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+def questionsGeneration():
+    global question
+    arithmetics = {
+        " + ": lambda x, y: x + y,
+        " - ": lambda x, y: x - y,
+        " * ": lambda x, y: x * y,
+        " / ": lambda x, y: x / y,
+    }
+    number_1 = random.choice(range(1, 11))
+    number_2 = random.choice(range(1, 11))
+    action = random.choice(list(arithmetics.keys()))
+    answer = arithmetics[action](number_1, number_2)
+    if int(answer) == answer:
+        question = str(number_1) + str(action) + str(number_2)
+    else:
+        questionsGeneration()
+    return question, int(answer)
 
 # загрузка уровня
 def load_level(filename):
