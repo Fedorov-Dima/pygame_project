@@ -31,7 +31,9 @@ FPS = 50
 
 tile_images = {
     'wall': pygame.transform.scale(load_image('box.png'), (100, 100)),
-    'empty': pygame.transform.scale(load_image('grass.png'), (100, 100))}  #Названия некоторых спрайтов
+    'empty': pygame.transform.scale(load_image('grass.png'), (100, 100)),
+    'ivent': pygame.transform.scale(load_image('ivent.png'), (50, 100)),
+    'hint': pygame.transform.scale(load_image('hint.png'), (50, 100))}  #Названия некоторых спрайтов
 
 player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  #Спрайт персонажа по умолчанию
 
@@ -113,6 +115,14 @@ class Wall(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
 
+class Ivent(Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(ivent_group)
+        self.image = tile_images[tile_type]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x + 20, tile_height * pos_y)
+
 # класс персонажа
 class Player(Sprite):
     def __init__(self, pos_x, pos_y):
@@ -151,7 +161,8 @@ clock = pygame.time.Clock()
 sprite_group = SpriteGroup()  # группа спрайтов травы
 wall_group = SpriteGroup()  # группа спрайтов стен
 hero_group = SpriteGroup()  # группа спрайта игрока
-all_sprites = SpriteGroup()  # группа всех спрайтов (пока не используется)
+ivent_group = SpriteGroup()
+all_sprites = SpriteGroup()  # группа всех спрайтов
 
 
 # "аварийное завершение" программы в виде отдельной функции
@@ -224,6 +235,7 @@ def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
+            Gras('empty', x, y)
             if level[y][x] == '.':
                 Gras('empty', x, y)
             elif level[y][x] == '#':
@@ -232,6 +244,10 @@ def generate_level(level):
                 Tile('empty', x, y)
                 new_player = Player(x, y)
                 level[y][x] = "."
+            elif level[y][x] == '!':
+                Ivent('ivent', x, y)
+            elif level[y][x] == '?':
+                Ivent('hint', x, y)
     return new_player, x, y
 
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
@@ -277,6 +293,7 @@ camera = Camera()
 all_sprites.add(hero_group)
 all_sprites.add(sprite_group)
 all_sprites.add(wall_group)
+all_sprites.add(ivent_group)
 
 up, down, left, right = False, False, False, False  # флаги перемещения
 while running:
@@ -317,6 +334,7 @@ while running:
     sprite_group.draw(screen)
     wall_group.draw(screen)
     hero_group.draw(screen)
+    ivent_group.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
 pygame.quit()
