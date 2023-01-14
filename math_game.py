@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 import random
+import pygame as pg
 
 # Карта
 map_file = 'education_level.map'
@@ -136,6 +137,7 @@ class Ivent(Sprite):
         self.pos_door = pos_door
         self.question = question
         self.answer = answer
+        self.flag = False
 
     def update(self):
         if pygame.sprite.spritecollideany(self, hero_group):
@@ -148,7 +150,23 @@ class Ivent(Sprite):
             text.get_height()
             screen.blit(text, (text_x, text_y))
             if pressed_key[pygame.K_e]:
-                pass  # Вот тут должно появлятся окно с примерами
+                self.flag = True
+
+            if self.flag:
+                pygame.draw.rect(screen, 'white',
+                                 (screen.get_size()[0] // 2 - 100, 200, 200, 70))
+                font_question = pygame.font.Font(None, 50)
+                text_question = font_question.render(f"{self.question} =", True, (0, 0, 0))
+                text_x_question = screen.get_size()[0] // 2 - text_question.get_width() // 2 - 20
+                text_y_question = 220
+                text_question.get_width()
+                text_question.get_height()
+                screen.blit(text_question, (text_x_question, text_y_question))
+
+            if pressed_key[pygame.K_r]:
+                self.flag = False
+        else:
+            self.flag = False
 
 
 # Класс дверей на уровне
