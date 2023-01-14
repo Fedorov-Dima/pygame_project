@@ -3,10 +3,11 @@ import os
 import sys
 import random
 
-#Карта
+# Карта
 map_file = 'education_level.map'
 
-#Функция загрузки спрайтов
+
+# Функция загрузки спрайтов
 def load_image(name, color_key=None):
     fullname = os.path.join('data', name)
     try:
@@ -20,6 +21,7 @@ def load_image(name, color_key=None):
             color_key = image.get_at((0, 0))
         image.set_colorkey(color_key)
     return image
+
 
 #
 pygame.init()
@@ -35,13 +37,13 @@ tile_images = {
     'ivent': pygame.transform.scale(load_image('ivent.png'), (50, 100)),
     'hint': pygame.transform.scale(load_image('hint.png'), (50, 100)),
     'door': pygame.transform.scale(load_image('close_door.png'), (75, 100)),
-    'end': pygame.transform.scale(load_image('close_door_end.png'), (75, 100))}  #Названия некоторых спрайтов
+    'end': pygame.transform.scale(load_image('close_door_end.png'), (75, 100))}  # Названия некоторых спрайтов
 
-player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  #Спрайт персонажа по умолчанию
+player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  # Спрайт персонажа по умолчанию
 
 tile_width = tile_height = 100
 
-#Списки со спрайтами персонажа, нужны для анимации передвижения
+# Списки со спрайтами персонажа, нужны для анимации передвижения
 walk_down = [pygame.transform.scale(load_image('hero_down_1.png'), (58, 90)),
              pygame.transform.scale(load_image('hero_down_2.png'), (58, 90)),
              pygame.transform.scale(load_image('hero_down_1.png'), (58, 90)),
@@ -62,7 +64,7 @@ walk_right = [pygame.transform.scale(load_image('hero_right_1.png'), (58, 90)),
               pygame.transform.scale(load_image('hero_right_1.png'), (58, 90)),
               pygame.transform.scale(load_image('hero_right_3.png'), (58, 90))]
 
-hero_anim_count = 0  #Индекс текущего спрайта в списке
+hero_anim_count = 0  # Индекс текущего спрайта в списке
 
 
 class ScreenFrame(pygame.sprite.Sprite):
@@ -98,6 +100,8 @@ class Tile(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.pos = pos_x, pos_y
+
+
 # Трава
 class Gras(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
@@ -118,6 +122,7 @@ class Wall(Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.pos = pos_x, pos_y
+
 
 # Класс ивентов (примеров)
 class Ivent(Sprite):
@@ -143,7 +148,8 @@ class Ivent(Sprite):
             text_h = text.get_height()
             screen.blit(text, (text_x, text_y))
             if pressed_key[pygame.K_e]:
-                pass                    # Вот тут должно появлятся окно с примерами
+                pass  # Вот тут должно появлятся окно с примерами
+
 
 # Класс дверей на уровне
 class Door_ivent(Sprite):
@@ -159,6 +165,7 @@ class Door_ivent(Sprite):
     def update(self):
         if self.open:
             self.image = pygame.transform.scale(load_image('open_door.png'), (75, 100))
+
 
 # Класс дверей с уровня (переход на новый)
 class Door_end(Sprite):
@@ -205,6 +212,7 @@ class Player(Sprite):
                 if pygame.sprite.collide_mask(self, i) and not i.open:
                     self.rect = self.rect.move(-x, -y)
 
+
 # Клас камеры
 class Camera:
     # зададим начальный сдвиг камеры
@@ -236,6 +244,7 @@ ivent_group = SpriteGroup()
 door_group = SpriteGroup()
 all_sprites = SpriteGroup()
 list_group = [sprite_group, wall_group, hero_group, ivent_group, door_group, all_sprites]
+
 
 # Загрузка нового уровня
 def new_level():
@@ -284,6 +293,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+
 # Генерация математических выражений
 def questionsGeneration(n):
     question = ''
@@ -316,6 +326,7 @@ def load_level(filename):
         print("Не удалось загрузить файл:", filename)
         pygame.quit()
         return None
+
 
 # генерация уровня
 def generate_level(level):
@@ -354,6 +365,7 @@ def generate_level(level):
                 Door_end('end', x, y)
     return new_player, x, y
 
+
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
 def check_image_hero(hero):
     if hero.image in walk_down:
@@ -365,11 +377,12 @@ def check_image_hero(hero):
     elif hero.image in walk_right:
         hero.image = walk_right[0]
 
+
 # обработка перемещения героя
 def move(hero, movement):
     clock.tick(15)
 
-    global hero_anim_count  #Индекс текущего спрайта в списке, его изменение
+    global hero_anim_count  # Индекс текущего спрайта в списке, его изменение
     if hero_anim_count == 3:
         hero_anim_count = 0
     else:
@@ -387,6 +400,7 @@ def move(hero, movement):
     elif movement == "right":
         hero.image = walk_right[hero_anim_count]  # смена спрайта
         hero.move(5, 0)
+
 
 # стандартный запуск
 start_screen()
