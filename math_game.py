@@ -4,9 +4,8 @@ import sys
 import random
 
 # Карта
-#map_file = 'education_level.map'
-map_file = 'level_1.map'
-
+map_file = 'education_level.map'
+level_list = ['level_1.map', 'level_2.map', 0]
 
 # Функция загрузки спрайтов
 def load_image(name, color_key=None):
@@ -33,12 +32,13 @@ height = screen.get_size()[1]
 FPS = 50
 
 tile_images = {
-    'wall': pygame.transform.scale(load_image('tree.png'), (100, 100)),
+    'wall': pygame.transform.scale(load_image('tree.png'), (95, 95)),
     'empty': pygame.transform.scale(load_image('grass.png'), (100, 100)),
     'ivent': pygame.transform.scale(load_image('ivent.png'), (50, 100)),
     'hint': pygame.transform.scale(load_image('hint.png'), (50, 100)),
     'door': pygame.transform.scale(load_image('close_door.png'), (75, 100)),
-    'end': pygame.transform.scale(load_image('close_door_end.png'), (75, 100))}  # Названия некоторых спрайтов
+    'end_level': pygame.transform.scale(load_image('close_door_end.png'), (75, 100)),
+    'end_game': pygame.transform.scale(load_image('close_door_end.png'), (75, 100))}  # Названия некоторых спрайтов
 
 player_image = pygame.transform.scale(load_image('hero_down_1.png'), (58, 90))  # Спрайт персонажа по умолчанию
 
@@ -66,6 +66,9 @@ walk_right = [pygame.transform.scale(load_image('hero_right_1.png'), (58, 90)),
               pygame.transform.scale(load_image('hero_right_3.png'), (58, 90))]
 
 hero_anim_count = 0  # Индекс текущего спрайта в списке
+
+max_ivent = 0
+total_ivent = 0
 
 
 class ScreenFrame(pygame.sprite.Sprite):
@@ -139,6 +142,7 @@ class Ivent(Sprite):
         self.answer = answer
         self.flag = False
         self.result = ''
+        self.message = False
 
     def update_result(self):
         pressed_key = pygame.key.get_pressed()
@@ -172,26 +176,24 @@ class Ivent(Sprite):
         if pygame.sprite.spritecollideany(self, hero_group):
             pressed_key = pygame.key.get_pressed()
             if not self.flag:
-                font = pygame.font.Font(None, 50)
-                text = font.render("Нажмите 'E'", True, (255, 255, 255))
-                text_x = screen.get_size()[0] // 2 - text.get_width() // 2
-                text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
-                text.get_width()
-                text.get_height()
-                screen.blit(text, (text_x, text_y))
+                drawing_text("Нажмите 'E'", (255, 255, 255))
             if pressed_key[pygame.K_e]:
                 self.flag = True
 
             if self.flag:
                 self.update_result()
-                pygame.draw.rect(screen, 'white',
-                                 (screen.get_size()[0] // 2 - 100, 200, 200, 70))
+
                 font_question = pygame.font.Font(None, 50)
                 text_question = font_question.render(f"{self.question} = {self.result}", True, (0, 0, 0))
-                text_x_question = screen.get_size()[0] // 2 - text_question.get_width() // 2 - 20
+                text_x_question = screen.get_size()[0] // 2 - text_question.get_width() // 2
                 text_y_question = 220
                 text_question.get_width()
                 text_question.get_height()
+                pygame.draw.rect(screen, 'white',
+                                 (screen.get_size()[0] // 2 - text_question.get_width() // 2 - 20,
+                                  text_y_question - 20,
+                                  text_question.get_width() + 40,
+                                  text_question.get_height() + 40))
                 screen.blit(text_question, (text_x_question, text_y_question))
 
             if pressed_key[pygame.K_RETURN]:
@@ -201,18 +203,15 @@ class Ivent(Sprite):
                         if el.pos == self.pos_door:
                             el.open = True
                             el.image = pygame.transform.scale(load_image('open_door.png'), (75, 100))
+                    check_ivent()
                     self.kill()
                 else:
-                    font = pygame.font.Font(None, 50)
-                    text = font.render("Неверно", True, (255, 0, 0))
-                    text_x = screen.get_size()[0] // 2 - text.get_width() // 2
-                    text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
-                    text.get_width()
-                    text.get_height()
-                    screen.blit(text, (text_x, text_y))
-                    clock.tick(10)
+                    self.message = True
+            if self.message and self.flag:
+                drawing_text("Неверно", (255, 0, 0))
 
         else:
+            self.message = False
             self.flag = False
 
 
@@ -228,7 +227,7 @@ class Door_ivent(Sprite):
         self.pos = pos_y, pos_x
 
 
-# Класс дверей с уровня (переход на новый)
+# Класс дверей конца уровня
 class Door_end(Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(door_group)
@@ -236,22 +235,22 @@ class Door_end(Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 15, tile_height * pos_y)
-        self.open = True
+        self.open = False
         self.pos = pos_y, pos_x
+        if tile_type == 'end_game':
+            self.end_game = True
+        else:
+            self.end_game = False
 
     def update(self):
         if pygame.sprite.spritecollideany(self, hero_group):
             self.image = pygame.transform.scale(load_image('open_door_end.png'), (75, 100))
             pressed_key = pygame.key.get_pressed()
-            font = pygame.font.Font(None, 50)
-            text = font.render("Нажмите 'E'", True, (255, 255, 255))
-            text_x = screen.get_size()[0] // 2 - text.get_width() // 2
-            text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
-            text.get_width()
-            text.get_height()
-            screen.blit(text, (text_x, text_y))
-            if pressed_key[pygame.K_e]:
+            drawing_text("Нажмите 'E'", (255, 255, 255))
+            if pressed_key[pygame.K_e] and self.open and not self.end_game:
                 new_level()
+            elif pressed_key[pygame.K_e] and self.open and self.end_game:
+                end_game()
         else:
             self.image = pygame.transform.scale(load_image('close_door_end.png'), (75, 100))
 
@@ -306,6 +305,16 @@ door_group = SpriteGroup()
 all_sprites = SpriteGroup()
 list_group = [sprite_group, wall_group, hero_group, ivent_group, door_group, all_sprites]
 
+# Отрисовка текста
+def drawing_text(text, color):
+    font = pygame.font.Font(None, 50)
+    text = font.render(text, True, color)
+    text_x = screen.get_size()[0] // 2 - text.get_width() // 2
+    text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
+    text.get_width()
+    text.get_height()
+    screen.blit(text, (text_x, text_y))
+
 
 # Загрузка нового уровня
 def new_level():
@@ -313,11 +322,18 @@ def new_level():
     for i in range(len(list_group)):
         for el in list_group[i]:
             el.kill()
-    level_map = load_level('level_1.map')
+    level_map = load_level(level_list[level_list[-1]])
     hero, max_x, max_y = generate_level(level_map)
     camera = Camera()
     for i in range(len(list_group) - 1):
         list_group[-1].add(list_group[i])
+    counts_ivent_list[1] = 0
+    counts_ivent_list[0] = len(ivent_group)
+    level_list[-1] += 1
+
+# Конец игры
+def end_game():
+    pass
 
 
 # "аварийное завершение" программы в виде отдельной функции
@@ -365,9 +381,13 @@ def questionsGeneration(n):
     }
     number_1 = random.choice(range(1, n))
     number_2 = random.choice(range(1, n))
+
     action = random.choice(list(arithmetics.keys()))
+    if str(action) == ' + ' or str(action) == ' - ':
+        number_1 += 10
+        number_2 += 10
     answer = arithmetics[action](number_1, number_2)
-    if int(answer) == answer:
+    if int(answer) == answer and answer >= 0:
         question = str(number_1) + str(action) + str(number_2)
     else:
         question, answer = questionsGeneration(n)
@@ -425,8 +445,18 @@ def generate_level(level):
             elif level[y][x] == '|':
                 Door_ivent('door', x, y)
             elif level[y][x] == '^':
-                Door_end('end', x, y)
+                Door_end('end_level', x, y)
+            elif level[y][x] == 'E':
+                Door_end('end_game', x, y)
     return new_player, x, y
+
+# Проверка на решение всех примеров
+def check_ivent():
+    counts_ivent_list[1] += 1
+    if counts_ivent_list[1] == counts_ivent_list[0]:
+        for el in door_group:
+            if type(el) is Door_end:
+                el.open = True
 
 
 # когда персонаж останавливается, его спрайт переходит в стоячее положение
@@ -453,16 +483,16 @@ def move(hero, movement):
 
     if movement == "up":
         hero.image = walk_up[hero_anim_count]  # смена спрайта
-        hero.move(0, -7)
+        hero.move(0, -10)
     elif movement == "down":
         hero.image = walk_down[hero_anim_count]  # смена спрайта
-        hero.move(0, 7)
+        hero.move(0, 10)
     elif movement == "left":
         hero.image = walk_left[hero_anim_count]  # смена спрайта
-        hero.move(-7, 0)
+        hero.move(-10, 0)
     elif movement == "right":
         hero.image = walk_right[hero_anim_count]  # смена спрайта
-        hero.move(7, 0)
+        hero.move(10, 0)
 
 
 # стандартный запуск
@@ -471,12 +501,14 @@ level_map = load_level(map_file)
 hero, max_x, max_y = generate_level(level_map)
 camera = Camera()
 
+max_ivent = len(ivent_group)
 all_sprites.add(hero_group)
 all_sprites.add(sprite_group)
 all_sprites.add(wall_group)
 all_sprites.add(ivent_group)
 all_sprites.add(door_group)
 
+counts_ivent_list = [max_ivent, total_ivent]
 up, down, left, right = False, False, False, False  # флаги перемещения
 while running:
     for event in pygame.event.get():
