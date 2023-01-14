@@ -297,7 +297,11 @@ def questionsGeneration():
     number_2 = random.choice(range(1, 11))
     action = random.choice(list(arithmetics.keys()))
     answer = arithmetics[action](number_1, number_2)
-    return question, answer
+    if int(answer) == answer:
+        question = str(number_1) + str(action) + str(number_2)
+    else:
+        questionsGeneration()
+    return question, int(answer)
 
 # загрузка уровня
 def load_level(filename):
