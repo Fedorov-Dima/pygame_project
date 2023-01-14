@@ -144,8 +144,8 @@ class Ivent(Sprite):
             text = font.render("Нажмите 'E'", True, (255, 255, 255))
             text_x = screen.get_size()[0] // 2 - text.get_width() // 2
             text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
-            text_w = text.get_width()
-            text_h = text.get_height()
+            text.get_width()
+            text.get_height()
             screen.blit(text, (text_x, text_y))
             if pressed_key[pygame.K_e]:
                 pass  # Вот тут должно появлятся окно с примерами
@@ -186,8 +186,8 @@ class Door_end(Sprite):
             text = font.render("Нажмите 'E'", True, (255, 255, 255))
             text_x = screen.get_size()[0] // 2 - text.get_width() // 2
             text_y = screen.get_size()[1] // 2 - text.get_height() // 2 + screen.get_size()[1] // 4
-            text_w = text.get_width()
-            text_h = text.get_height()
+            text.get_width()
+            text.get_height()
             screen.blit(text, (text_x, text_y))
             if pressed_key[pygame.K_e]:
                 new_level()
