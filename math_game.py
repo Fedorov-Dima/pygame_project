@@ -332,7 +332,8 @@ def generate_level(level):
                 new_player = Player(x, y)
                 level[y][x] = "."
             elif level[y][x] == '!':
-                question, answer = questionsGeneration()
+                n = 11
+                question, answer = questionsGeneration(n)
                 if level[y - 1][x] == '|':
                     pos_door = (y - 1, x)
                     Ivent('ivent', x, y, pos_door, question, answer)
