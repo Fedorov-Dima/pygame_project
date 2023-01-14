@@ -2,7 +2,6 @@ import pygame
 import os
 import sys
 import random
-import pygame as pg
 
 # Карта
 map_file = 'education_level.map'
@@ -227,10 +226,6 @@ class Door_ivent(Sprite):
         self.open = False
         self.pos = pos_y, pos_x
 
-    #def update(self):
-    #    if self.open:
-    #        self.image = pygame.transform.scale(load_image('open_door.png'), (75, 100))
-
 
 # Класс дверей с уровня (переход на новый)
 class Door_end(Sprite):
@@ -361,7 +356,6 @@ def start_screen():
 
 # Генерация математических выражений
 def questionsGeneration(n):
-    question = ''
     arithmetics = {
         " + ": lambda x, y: x + y,
         " - ": lambda x, y: x - y,
