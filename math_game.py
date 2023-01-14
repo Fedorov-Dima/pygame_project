@@ -285,7 +285,7 @@ def start_screen():
         clock.tick(FPS)
 
 # Генерация математических выражений
-def questionsGeneration():
+def questionsGeneration(n):
     question = ''
     arithmetics = {
         " + ": lambda x, y: x + y,
@@ -293,15 +293,16 @@ def questionsGeneration():
         " * ": lambda x, y: x * y,
         " / ": lambda x, y: x / y,
     }
-    number_1 = random.choice(range(1, 11))
-    number_2 = random.choice(range(1, 11))
+    number_1 = random.choice(range(1, n))
+    number_2 = random.choice(range(1, n))
     action = random.choice(list(arithmetics.keys()))
     answer = arithmetics[action](number_1, number_2)
     if int(answer) == answer:
         question = str(number_1) + str(action) + str(number_2)
     else:
-        questionsGeneration()
+        questionsGeneration(n)
     return question, int(answer)
+
 
 # загрузка уровня
 def load_level(filename):
