@@ -4,7 +4,8 @@ import sys
 import random
 
 # Карта
-map_file = 'education_level.map'
+#map_file = 'education_level.map'
+map_file = 'level_1.map'
 
 
 # Функция загрузки спрайтов
@@ -131,7 +132,7 @@ class Ivent(Sprite):
         self.image = tile_images[tile_type]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x + 20, tile_height * pos_y)
+            tile_width * pos_x + 28, tile_height * pos_y)
         self.pos = pos_y, pos_x
         self.pos_door = pos_door
         self.question = question
