@@ -7,6 +7,18 @@ import random
 map_file = 'education_level.map'
 level_list = ['level_1.map', 'level_2.map', 0]
 
+
+pygame.mixer.pre_init(44100, -16, 1, 512)
+pygame.init()
+
+load = pygame.mixer.Sound('data/background music.mp3')
+game = pygame.mixer.Sound('data/fon_sound.mp3')
+go = pygame.mixer.Sound('data/grass_step.mp3')
+ivent = pygame.mixer.Sound('data/zvuk_but.mp3')
+math_event = pygame.mixer.Sound('data/end_event_sound.mp3')
+new_level_sound = pygame.mixer.Sound('data/new_level_sound.mp3')
+
+
 # Функция загрузки спрайтов
 def load_image(name, color_key=None):
     fullname = os.path.join('data', name)
@@ -21,6 +33,36 @@ def load_image(name, color_key=None):
             color_key = image.get_at((0, 0))
         image.set_colorkey(color_key)
     return image
+
+
+def update_result(result):
+    pressed_key = pygame.key.get_pressed()
+    if pressed_key[pygame.K_1]:
+        result += '1'
+    elif pressed_key[pygame.K_2]:
+        result += '2'
+    elif pressed_key[pygame.K_3]:
+        result += '3'
+    elif pressed_key[pygame.K_4]:
+        result += '4'
+    elif pressed_key[pygame.K_5]:
+        result += '5'
+    elif pressed_key[pygame.K_6]:
+        result += '6'
+    elif pressed_key[pygame.K_7]:
+        result += '7'
+    elif pressed_key[pygame.K_8]:
+        result += '8'
+    elif pressed_key[pygame.K_9]:
+        result += '9'
+    elif pressed_key[pygame.K_0]:
+        result += '0'
+    elif pressed_key[pygame.K_MINUS]:
+        result += '-'
+    elif pressed_key[pygame.K_BACKSPACE]:
+        result = result[:-1]
+    clock.tick(10)
+    return result
 
 
 #
@@ -71,28 +113,15 @@ max_ivent = 0
 total_ivent = 0
 
 
-class ScreenFrame(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.rect = (0, 0, 500, 500)
-
-
 class SpriteGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
-
-    def get_event(self, event):
-        for sprite in self:
-            sprite.get_event(event)
 
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, group):
         super().__init__(group)
         self.rect = None
-
-    def get_event(self, event):
-        pass
 
 
 # установка неподвижных объектов, через которые можно ходить (трава)
@@ -144,34 +173,6 @@ class Ivent(Sprite):
         self.result = ''
         self.message = False
 
-    def update_result(self):
-        pressed_key = pygame.key.get_pressed()
-        if pressed_key[pygame.K_1]:
-            self.result += '1'
-        elif pressed_key[pygame.K_2]:
-            self.result += '2'
-        elif pressed_key[pygame.K_3]:
-            self.result += '3'
-        elif pressed_key[pygame.K_4]:
-            self.result += '4'
-        elif pressed_key[pygame.K_5]:
-            self.result += '5'
-        elif pressed_key[pygame.K_6]:
-            self.result += '6'
-        elif pressed_key[pygame.K_7]:
-            self.result += '7'
-        elif pressed_key[pygame.K_8]:
-            self.result += '8'
-        elif pressed_key[pygame.K_9]:
-            self.result += '9'
-        elif pressed_key[pygame.K_0]:
-            self.result += '0'
-        elif pressed_key[pygame.K_MINUS]:
-            self.result += '-'
-        elif pressed_key[pygame.K_BACKSPACE]:
-            self.result = self.result[:-1]
-        clock.tick(10)
-
     def update(self):
         if pygame.sprite.spritecollideany(self, hero_group):
             pressed_key = pygame.key.get_pressed()
@@ -181,7 +182,7 @@ class Ivent(Sprite):
                 self.flag = True
 
             if self.flag:
-                self.update_result()
+                self.result = update_result(self.result)
 
                 font_question = pygame.font.Font(None, 50)
                 text_question = font_question.render(f"{self.question} = {self.result}", True, (0, 0, 0))
@@ -199,6 +200,7 @@ class Ivent(Sprite):
             if pressed_key[pygame.K_RETURN]:
                 if self.result != '' and self.result != '-' and int(self.result) == int(self.answer):
                     self.flag = False
+                    math_event.play()
                     for el in door_group:
                         if el.pos == self.pos_door:
                             el.open = True
@@ -305,6 +307,7 @@ door_group = SpriteGroup()
 all_sprites = SpriteGroup()
 list_group = [sprite_group, wall_group, hero_group, ivent_group, door_group, all_sprites]
 
+
 # Отрисовка текста
 def drawing_text(text, color):
     font = pygame.font.Font(None, 50)
@@ -319,6 +322,7 @@ def drawing_text(text, color):
 # Загрузка нового уровня
 def new_level():
     global level_map, hero, max_x, max_y, camera
+    new_level_sound.play(0)
     for i in range(len(list_group)):
         for el in list_group[i]:
             el.kill()
@@ -331,9 +335,35 @@ def new_level():
     counts_ivent_list[0] = len(ivent_group)
     level_list[-1] += 1
 
+
 # Конец игры
 def end_game():
-    pass
+    font = pygame.font.Font(None, 50)
+    end_text_fon = ['Никитин Данииил', 'Фёдоров Дмитрий', 'Кутищев Максим', 'для вас старались:',  'Спаисибо за игру']
+
+    running = True
+    fon = pygame.transform.scale(load_image('fone_picture.jpg'), screen_size)
+    x_pos = 400
+    v = 20  # пикселей в секунду
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        screen.blit(fon, (0, 0))
+
+        n_pos = 0
+        for i in end_text_fon:
+            string_rendered = font.render(i, True, pygame.Color('green'))
+            intro_rect = string_rendered.get_rect()
+            intro_rect.top = int(x_pos) - n_pos
+            intro_rect.x = 300
+            screen.blit(string_rendered, intro_rect)
+            n_pos += 50
+
+        x_pos -= v * clock.tick() / 1000
+        pygame.display.flip()
+    pygame.quit()
+    sys.exit()
 
 
 # "аварийное завершение" программы в виде отдельной функции
@@ -344,29 +374,36 @@ def terminate():
 
 # стартовый экран
 def start_screen():
-    intro_text = ["Перемещение героя", "",
-                  "Герой двигается"]
+    w = screen.get_width()
+    h = screen.get_height()
+    load.play(-1)
 
-    fon = pygame.transform.scale(load_image('fon.jpg'), screen_size)
+    fon = pygame.transform.scale(load_image('fone_picture.jpg'), screen_size)
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, True, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
+    pygame.draw.rect(screen, (160, 160, 160), (w // 2 - 75,
+                                               h // 2 - 25, 150, 50), 0)
+    pygame.draw.rect(screen, (190, 190, 190), (w // 2 - 65,
+                                               h // 2 - 15, 130, 30), 0)
+    font_name_game = pygame.font.Font(None, 100)
+    text_name_game = font_name_game.render(f"Математическая игра", True, (0, 0, 0))
+    text_x_name_game = w // 2 - text_name_game.get_width() // 2
+    screen.blit(text_name_game, (text_x_name_game, 100))
 
+    text = font.render(f"Начать игру", True, (0, 0, 0))
+    text_x = w // 2 - text.get_width() // 2
+    text_y = h // 2 - text.get_height() // 2
+    screen.blit(text, (text_x, text_y))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                a = event.pos
+                if a[0] >= w // 2 - 75 and a[0] <= w // 2 + 75 and a[1] >= h // 2 - 25 and \
+                        a[1] <= h // 2 + 25:
+                    ivent.play(1)
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -410,6 +447,7 @@ def load_level(filename):
 
 # генерация уровня
 def generate_level(level):
+    load.stop()
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -449,6 +487,7 @@ def generate_level(level):
             elif level[y][x] == 'E':
                 Door_end('end_game', x, y)
     return new_player, x, y
+
 
 # Проверка на решение всех примеров
 def check_ivent():
@@ -497,6 +536,7 @@ def move(hero, movement):
 
 # стандартный запуск
 start_screen()
+game.play(-1)
 level_map = load_level(map_file)
 hero, max_x, max_y = generate_level(level_map)
 camera = Camera()
@@ -513,18 +553,25 @@ up, down, left, right = False, False, False, False  # флаги перемещ�
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            go.stop()
             running = False
         elif event.type == pygame.KEYDOWN:  # проверка зажатия кнопки, изменение флагов перемещения
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_UP or event.key == pygame.K_w:
                 up = True
-            elif event.key == pygame.K_DOWN:
+                go.play(-1)
+            elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                 down = True
-            elif event.key == pygame.K_LEFT:
+                go.play(-1)
+            elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 left = True
-            elif event.key == pygame.K_RIGHT:
+                go.play(-1)
+            elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                 right = True
+                go.play(-1)
         elif event.type == pygame.KEYUP:  # проверка зажатия кнопки, изменение флагов перемещения
-            if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
+            go.stop()
+            if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_w, pygame.K_a,
+                             pygame.K_s, pygame.K_d]:
                 up, down, left, right = False, False, False, False
                 check_image_hero(hero)  # спрайт персонажа должен остановиться
 
@@ -554,4 +601,6 @@ while running:
     hero_group.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
+game.stop()
+load.stop()
 pygame.quit()
